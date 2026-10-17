@@ -1,0 +1,562 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Health & Wellness Quiz</title>
+<style>
+/*
+  Layout concept: a single centered "quiz card" on a soft clinical-meets-calm
+  background — progress bar up top, one question at a time, big tappable
+  answer rows. Feels like a modern health-app check-in, not a paper test.
+*/
+:root {
+  --bg: #f1f6f4;
+  --surface: #ffffff;
+  --surface-2: #eaf3f0;
+  --ink: #15312b;
+  --muted: #5c7872;
+  --accent: #2f8f6f;
+  --accent-ink: #ffffff;
+  --accent-soft: #d8efe5;
+  --warn: #c76b3f;
+  --border: #dbe8e3;
+  --correct: #2f8f6f;
+  --incorrect: #c0533f;
+
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1715;
+    --surface: #152420;
+    --surface-2: #1b2f29;
+    --ink: #eaf4f0;
+    --muted: #93ab a3;
+    --muted: #93aba3;
+    --accent: #5fcf a3;
+    --accent: #5fcfa3;
+    --accent-ink: #06211a;
+    --accent-soft: #1d3a32;
+    --warn: #e2946a;
+    --border: #25403a;
+    --correct: #5fcfa3;
+    --incorrect: #e58674;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1715;
+  --surface: #152420;
+  --surface-2: #1b2f29;
+  --ink: #eaf4f0;
+  --muted: #93aba3;
+  --accent: #5fcfa3;
+  --accent-ink: #06211a;
+  --accent-soft: #1d3a32;
+  --warn: #e2946a;
+  --border: #25403a;
+  --correct: #5fcfa3;
+  --incorrect: #e58674;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  margin: 0;
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  padding-block: 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 6vw, 38px);
+  font-weight: 600;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+
+.sub {
+  color: var(--muted);
+  font-size: 15px;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.progress-track {
+  flex: 1;
+  min-width: 0;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 10%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+.progress-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.q-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.q-text {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4.5vw, 24px);
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0 0 20px;
+  text-wrap: balance;
+  min-height: 0;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-family: var(--font-body);
+  font-size: 15.5px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  min-width: 0;
+}
+
+.option:hover { border-color: var(--accent); }
+.option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.option:active { transform: scale(0.99); }
+
+.option .letter {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.option .text { flex: 1; min-width: 0; line-height: 1.4; }
+
+.option[disabled] { cursor: default; }
+
+.option.correct {
+  border-color: var(--correct);
+  background: color-mix(in srgb, var(--correct) 14%, var(--surface-2));
+}
+.option.correct .letter { background: var(--correct); border-color: var(--correct); color: var(--accent-ink); }
+
+.option.incorrect {
+  border-color: var(--incorrect);
+  background: color-mix(in srgb, var(--incorrect) 12%, var(--surface-2));
+}
+.option.incorrect .letter { background: var(--incorrect); border-color: var(--incorrect); color: #fff; }
+
+.option.dim { opacity: 0.55; }
+
+.feedback {
+  display: none;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.feedback.show { display: block; }
+.feedback .verdict {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+.feedback.good .verdict { color: var(--correct); }
+.feedback.bad .verdict { color: var(--incorrect); }
+
+.nav-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.next-btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14.5px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 999px;
+  padding: 12px 22px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.next-btn.show { opacity: 1; pointer-events: auto; }
+.next-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Results screen */
+.results { display: none; text-align: center; }
+.results.show { display: block; }
+.score-ring {
+  width: 128px;
+  height: 128px;
+  margin: 4px auto 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(var(--accent) calc(var(--pct, 0) * 1%), var(--surface-2) 0);
+}
+.score-ring-inner {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.score-num {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 600;
+}
+.score-den { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.results h2 { font-family: var(--font-display); font-size: 22px; margin: 0 0 8px; }
+.results p { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
+.restart-btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14.5px;
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  padding: 11px 22px;
+  cursor: pointer;
+}
+.restart-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.quiz-screen { display: block; }
+.quiz-screen.hidden { display: none; }
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 18px;
+  font-family: var(--font-mono);
+}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <p class="eyebrow">Daily Check-in</p>
+  <h1>Health &amp; Wellness Quiz</h1>
+  <p class="sub">10 quick questions on everyday health knowledge — nutrition, sleep, exercise and first aid basics.</p>
+
+  <div class="card">
+    <div id="quizScreen" class="quiz-screen">
+      <div class="progress-row">
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-label" id="progressLabel">1 / 10</span>
+      </div>
+
+      <span class="q-tag" id="qTag">Nutrition</span>
+      <p class="q-text" id="qText"></p>
+      <div class="options" id="options"></div>
+
+      <div class="feedback" id="feedback">
+        <span class="verdict" id="feedbackVerdict"></span>
+        <span id="feedbackText"></span>
+      </div>
+
+      <div class="nav-row">
+        <button class="next-btn" id="nextBtn" type="button">Next question</button>
+      </div>
+    </div>
+
+    <div id="resultsScreen" class="results">
+      <div class="score-ring" id="scoreRing">
+        <div class="score-ring-inner">
+          <span class="score-num" id="scoreNum">0</span>
+          <span class="score-den">out of 10</span>
+        </div>
+      </div>
+      <h2 id="resultTitle">Nice work</h2>
+      <p id="resultText">Here's how you did.</p>
+      <button class="restart-btn" id="restartBtn" type="button">Retake the quiz</button>
+    </div>
+  </div>
+
+  <footer>SELF-ASSESSMENT · NOT MEDICAL ADVICE</footer>
+</div>
+
+<script>
+(function () {
+  var QUESTIONS = [
+    {
+      tag: "Hydration",
+      text: "How much water does the average adult need per day, roughly?",
+      options: ["About 1 cup", "About 2–3 liters", "About 10 liters", "No fixed amount needed"],
+      correct: 1,
+      explain: "Most adults need roughly 2–3 liters (about 8–12 cups) a day from fluids and food, though it varies with activity, climate and body size."
+    },
+    {
+      tag: "Sleep",
+      text: "How many hours of sleep do most adults need each night?",
+      options: ["4–5 hours", "6–7 hours", "7–9 hours", "10–12 hours"],
+      correct: 2,
+      explain: "The CDC and most sleep researchers recommend 7–9 hours a night for adults for healthy cognitive and metabolic function."
+    },
+    {
+      tag: "Exercise",
+      text: "How many minutes of moderate aerobic activity are recommended per week?",
+      options: ["At least 30 minutes", "At least 150 minutes", "At least 500 minutes", "Exercise isn't necessary weekly"],
+      correct: 1,
+      explain: "Health guidelines (WHO, CDC) recommend at least 150 minutes of moderate-intensity aerobic activity per week, plus muscle-strengthening on 2+ days."
+    },
+    {
+      tag: "Nutrition",
+      text: "Which nutrient is the body's main source of quick energy?",
+      options: ["Protein", "Carbohydrates", "Vitamins", "Fiber"],
+      correct: 1,
+      explain: "Carbohydrates break down into glucose, the body and brain's primary and fastest-accessed energy source."
+    },
+    {
+      tag: "First aid",
+      text: "What's the first step when treating a minor burn?",
+      options: ["Apply ice directly", "Apply butter or oil", "Run cool (not cold) water over it", "Pop any blisters immediately"],
+      correct: 2,
+      explain: "Cool running water for about 10–20 minutes helps reduce heat in the skin. Ice, butter and popping blisters can all make a burn worse."
+    },
+    {
+      tag: "Mental health",
+      text: "Which of these is a recognized healthy way to manage everyday stress?",
+      options: ["Skipping meals", "Deep breathing or mindfulness", "Avoiding all social contact", "Overworking without breaks"],
+      correct: 1,
+      explain: "Deep breathing, mindfulness and short breaks are well-supported techniques for regulating stress response; isolation and overwork tend to increase it."
+    },
+    {
+      tag: "Nutrition",
+      text: "Roughly how many servings of fruits and vegetables are commonly recommended daily?",
+      options: ["1–2 servings", "5 or more servings", "Only on weekends", "None, if taking a multivitamin"],
+      correct: 1,
+      explain: "Most dietary guidelines, including the WHO's, recommend at least 5 servings (about 400g) of fruits and vegetables a day."
+    },
+    {
+      tag: "Hygiene",
+      text: "What is the recommended minimum duration for handwashing to effectively remove germs?",
+      options: ["2–3 seconds", "20 seconds", "2 minutes", "No specific time matters"],
+      correct: 1,
+      explain: "The CDC and WHO recommend washing hands with soap for at least 20 seconds to effectively reduce germs and pathogens."
+    },
+    {
+      tag: "Heart health",
+      text: "Which of these habits most directly supports cardiovascular health?",
+      options: ["High-sodium processed foods", "Regular physical activity and a balanced diet", "Prolonged sitting", "Skipping regular check-ups"],
+      correct: 1,
+      explain: "Regular activity plus a diet balanced in fiber, healthy fats and limited sodium are core, evidence-backed pillars of heart health."
+    },
+    {
+      tag: "Preventive care",
+      text: "Why are regular health check-ups important even when you feel fine?",
+      options: ["They aren't necessary if you feel healthy", "They help catch potential issues early", "They are only for people over 60", "They replace the need for healthy habits"],
+      correct: 1,
+      explain: "Routine check-ups and screenings can catch risk factors or conditions (like high blood pressure) early, often before symptoms appear."
+    }
+  ];
+
+  var current = 0;
+  var score = 0;
+  var answered = false;
+
+  var progressFill = document.getElementById('progressFill');
+  var progressLabel = document.getElementById('progressLabel');
+  var qTag = document.getElementById('qTag');
+  var qText = document.getElementById('qText');
+  var optionsEl = document.getElementById('options');
+  var feedback = document.getElementById('feedback');
+  var feedbackVerdict = document.getElementById('feedbackVerdict');
+  var feedbackText = document.getElementById('feedbackText');
+  var nextBtn = document.getElementById('nextBtn');
+  var quizScreen = document.getElementById('quizScreen');
+  var resultsScreen = document.getElementById('resultsScreen');
+  var scoreRing = document.getElementById('scoreRing');
+  var scoreNum = document.getElementById('scoreNum');
+  var resultTitle = document.getElementById('resultTitle');
+  var resultText = document.getElementById('resultText');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var LETTERS = ['A', 'B', 'C', 'D', 'E'];
+
+  function renderQuestion() {
+    answered = false;
+    var q = QUESTIONS[current];
+    progressFill.style.width = (((current) / QUESTIONS.length) * 100 + 5) + '%';
+    progressLabel.textContent = (current + 1) + ' / ' + QUESTIONS.length;
+    qTag.textContent = q.tag;
+    qText.textContent = q.text;
+    feedback.classList.remove('show', 'good', 'bad');
+    nextBtn.classList.remove('show');
+
+    optionsEl.innerHTML = '';
+    q.options.forEach(function (opt, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option';
+      btn.setAttribute('data-idx', idx);
+      btn.innerHTML = '<span class="letter">' + LETTERS[idx] + '</span><span class="text"></span>';
+      btn.querySelector('.text').textContent = opt;
+      btn.addEventListener('click', function () { handleAnswer(idx, btn); });
+      optionsEl.appendChild(btn);
+    });
+  }
+
+  function handleAnswer(idx, btnEl) {
+    if (answered) return;
+    answered = true;
+    var q = QUESTIONS[current];
+    var allBtns = optionsEl.querySelectorAll('.option');
+    allBtns.forEach(function (b) {
+      b.disabled = true;
+      var bIdx = parseInt(b.getAttribute('data-idx'), 10);
+      if (bIdx === q.correct) {
+        b.classList.add('correct');
+      } else if (bIdx === idx) {
+        b.classList.add('incorrect');
+      } else {
+        b.classList.add('dim');
+      }
+    });
+
+    var isCorrect = idx === q.correct;
+    if (isCorrect) score++;
+
+    feedback.classList.add('show', isCorrect ? 'good' : 'bad');
+    feedbackVerdict.textContent = isCorrect ? 'Correct' : 'Not quite';
+    feedbackText.textContent = q.explain;
+
+    nextBtn.textContent = current === QUESTIONS.length - 1 ? 'See results' : 'Next question';
+    nextBtn.classList.add('show');
+  }
+
+  function showResults() {
+    quizScreen.classList.add('hidden');
+    resultsScreen.classList.add('show');
+    var pct = Math.round((score / QUESTIONS.length) * 100);
+    scoreRing.style.setProperty('--pct', pct);
+    scoreNum.textContent = score;
+
+    var title, text;
+    if (score >= 9) { title = 'Excellent'; text = 'You have a strong handle on everyday health basics.'; }
+    else if (score >= 7) { title = 'Solid grasp'; text = 'You know most of the fundamentals — a few gaps worth brushing up on.'; }
+    else if (score >= 4) { title = 'Good start'; text = 'You caught some key points. Review the ones you missed to round things out.'; }
+    else { title = 'Keep learning'; text = 'Health basics take practice — retake the quiz anytime to reinforce what you missed.'; }
+    resultTitle.textContent = title;
+    resultText.textContent = text;
+  }
+
+  nextBtn.addEventListener('click', function () {
+    if (current === QUESTIONS.length - 1) {
+      showResults();
+    } else {
+      current++;
+      renderQuestion();
+    }
+  });
+
+  restartBtn.addEventListener('click', function () {
+    current = 0;
+    score = 0;
+    quizScreen.classList.remove('hidden');
+    resultsScreen.classList.remove('show');
+    renderQuestion();
+  });
+
+  renderQuestion();
+})();
+</script>
